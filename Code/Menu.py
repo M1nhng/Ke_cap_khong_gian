@@ -10,6 +10,7 @@ def show_menu():
     pygame.display.set_caption("Pause Menu")
 
     font = pygame.font.SysFont("arialblack", 85)
+    label_font = pygame.font.SysFont("arial", 40)
     TEXT_COL = (255, 255, 255)
 
     # Load button images
@@ -29,6 +30,32 @@ def show_menu():
     back_button = button.Button(538, 610, back_img, 1)
 
     menu_state = "main"
+    audio_submenu = False
+
+    # Volume/SFX/Music setup
+    bar_width = 300
+    bar_height = 10
+    knob_radius = 12
+    bar_x = (SCREEN_WIDTH - bar_width) // 2  # Center aligned
+
+    volume = 5.0
+    max_volume = 10.0
+    min_volume = 0.0
+    volume_bar_y = 150
+
+    sfx = 5.0
+    max_sfx = 10.0
+    min_sfx = 0.0
+    sfx_bar_y = 250
+
+    music = 5.0
+    max_music = 10.0
+    min_music = 0.0
+    music_bar_y = 350
+
+    dragging_volume = False
+    dragging_sfx = False
+    dragging_music = False
 
     def draw_text(text, font, text_col, x, y):
         img = font.render(text, True, text_col)
@@ -43,20 +70,81 @@ def show_menu():
                 return "resume"
             if options_button.draw(screen):
                 menu_state = "options"
+                audio_submenu = False
             if quit_button.draw(screen):
                 return "quit"
 
         elif menu_state == "options":
-            if audio_button.draw(screen):
-                print("Audio setting clicked")
-            if video_button.draw(screen):
-                print("Video setting clicked")
-            if back_button.draw(screen):
-                menu_state = "main"
+            if not audio_submenu:
+                if audio_button.draw(screen):
+                    audio_submenu = True
+                if video_button.draw(screen):
+                    print("Video setting clicked")
+                if back_button.draw(screen):
+                    menu_state = "main"
+            else:
+                # Volume
+                draw_text("Master Volume", label_font, TEXT_COL, bar_x, volume_bar_y - 40)
+                pygame.draw.rect(screen, (255, 255, 255), (bar_x, volume_bar_y, bar_width, bar_height))
+                pygame.draw.rect(screen, (0, 255, 0), (bar_x, volume_bar_y, (volume / max_volume) * bar_width, bar_height))
+                volume_knob_x = bar_x + (volume / max_volume) * bar_width
+                pygame.draw.circle(screen, (255, 255, 0), (int(volume_knob_x), volume_bar_y + bar_height // 2), knob_radius)
+
+                # SFX
+                draw_text("SFX", label_font, TEXT_COL, bar_x, sfx_bar_y - 40)
+                pygame.draw.rect(screen, (255, 255, 255), (bar_x, sfx_bar_y, bar_width, bar_height))
+                pygame.draw.rect(screen, (0, 255, 0), (bar_x, sfx_bar_y, (sfx / max_sfx) * bar_width, bar_height))
+                sfx_knob_x = bar_x + (sfx / max_sfx) * bar_width
+                pygame.draw.circle(screen, (255, 255, 0), (int(sfx_knob_x), sfx_bar_y + bar_height // 2), knob_radius)
+
+                # Music
+                draw_text("Music", label_font, TEXT_COL, bar_x, music_bar_y - 40)
+                pygame.draw.rect(screen, (255, 255, 255), (bar_x, music_bar_y, bar_width, bar_height))
+                pygame.draw.rect(screen, (0, 255, 0), (bar_x, music_bar_y, (music / max_music) * bar_width, bar_height))
+                music_knob_x = bar_x + (music / max_music) * bar_width
+                pygame.draw.circle(screen, (255, 255, 0), (int(music_knob_x), music_bar_y + bar_height // 2), knob_radius)
+
+                # Back
+                if back_button.draw(screen):
+                    audio_submenu = False
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return "quit"
+
+            if audio_submenu:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                    # Volume
+                    if pygame.Rect(volume_knob_x - knob_radius, volume_bar_y - knob_radius, knob_radius * 2, knob_radius * 2).collidepoint(mouse_x, mouse_y) \
+                       or (bar_x <= mouse_x <= bar_x + bar_width and volume_bar_y - 20 <= mouse_y <= volume_bar_y + bar_height + 20):
+                        dragging_volume = True
+                        volume = max(min_volume, min(max_volume, (mouse_x - bar_x) / bar_width * max_volume))
+
+                    # SFX
+                    if pygame.Rect(sfx_knob_x - knob_radius, sfx_bar_y - knob_radius, knob_radius * 2, knob_radius * 2).collidepoint(mouse_x, mouse_y) \
+                       or (bar_x <= mouse_x <= bar_x + bar_width and sfx_bar_y - 20 <= mouse_y <= sfx_bar_y + bar_height + 20):
+                        dragging_sfx = True
+                        sfx = max(min_sfx, min(max_sfx, (mouse_x - bar_x) / bar_width * max_sfx))
+
+                    # Music
+                    if pygame.Rect(music_knob_x - knob_radius, music_bar_y - knob_radius, knob_radius * 2, knob_radius * 2).collidepoint(mouse_x, mouse_y) \
+                       or (bar_x <= mouse_x <= bar_x + bar_width and music_bar_y - 20 <= mouse_y <= music_bar_y + bar_height + 20):
+                        dragging_music = True
+                        music = max(min_music, min(max_music, (mouse_x - bar_x) / bar_width * max_music))
+
+                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    dragging_volume = dragging_sfx = dragging_music = False
+
+                elif event.type == pygame.MOUSEMOTION:
+                    mouse_x, _ = event.pos
+                    if dragging_volume:
+                        volume = max(min_volume, min(max_volume, (mouse_x - bar_x) / bar_width * max_volume))
+                    if dragging_sfx:
+                        sfx = max(min_sfx, min(max_sfx, (mouse_x - bar_x) / bar_width * max_sfx))
+                    if dragging_music:
+                        music = max(min_music, min(max_music, (mouse_x - bar_x) / bar_width * max_music))
 
         pygame.display.update()
 
