@@ -170,12 +170,12 @@ def show_options_menu():
     audio_img = pygame.image.load("D:/Python/Game/images/button_audio.png").convert_alpha()
     video_img = pygame.image.load("D:/Python/Game/images/button_video.png").convert_alpha()
     back_img = pygame.image.load("D:/Python/Game/images/button_back.png").convert_alpha()
-
+    keys_img = pygame.image.load("D:/Python/Game/images/button_keys.png").convert_alpha()
     # Create buttons
     audio_button = button.Button(438, 110, audio_img, 1)
-    video_button = button.Button(438, 230, video_img, 1)
+    video_button = button.Button(438, 250, video_img, 1)
     back_button = button.Button(538, 610, back_img, 1)
-
+    keys_button = button.Button(458, 400, keys_img, 1)
     running = True
     while running:
         screen.fill((0, 0, 0))
@@ -190,6 +190,9 @@ def show_options_menu():
 
         if back_button.draw(screen):
             return "back"
+        if keys_button.draw(screen):
+            print("Keys setting clicked")
+
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
