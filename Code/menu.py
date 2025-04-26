@@ -87,21 +87,21 @@ def show_menu():
                     menu_state = "main"
             else:
                 # Volume
-                draw_text("Master Volume", label_font, TEXT_COL, bar_x, volume_bar_y - 40)
+                draw_text("Master Volume", label_font, TEXT_COL, bar_x, volume_bar_y - 50)
                 pygame.draw.rect(screen, (255, 255, 255), (bar_x, volume_bar_y, bar_width, bar_height))
                 pygame.draw.rect(screen, (0, 255, 0), (bar_x, volume_bar_y, (volume / max_volume) * bar_width, bar_height))
                 volume_knob_x = bar_x + (volume / max_volume) * bar_width
                 pygame.draw.circle(screen, (255, 255, 0), (int(volume_knob_x), volume_bar_y + bar_height // 2), knob_radius)
 
                 # SFX
-                draw_text("SFX", label_font, TEXT_COL, bar_x, sfx_bar_y - 40)
+                draw_text("SFX", label_font, TEXT_COL, bar_x, sfx_bar_y - 50)
                 pygame.draw.rect(screen, (255, 255, 255), (bar_x, sfx_bar_y, bar_width, bar_height))
                 pygame.draw.rect(screen, (0, 255, 0), (bar_x, sfx_bar_y, (sfx / max_sfx) * bar_width, bar_height))
                 sfx_knob_x = bar_x + (sfx / max_sfx) * bar_width
                 pygame.draw.circle(screen, (255, 255, 0), (int(sfx_knob_x), sfx_bar_y + bar_height // 2), knob_radius)
 
                 # Music
-                draw_text("Music", label_font, TEXT_COL, bar_x, music_bar_y - 40)
+                draw_text("Music", label_font, TEXT_COL, bar_x, music_bar_y - 50)
                 pygame.draw.rect(screen, (255, 255, 255), (bar_x, music_bar_y, bar_width, bar_height))
                 pygame.draw.rect(screen, (0, 255, 0), (bar_x, music_bar_y, (music / max_music) * bar_width, bar_height))
                 music_knob_x = bar_x + (music / max_music) * bar_width
@@ -242,21 +242,21 @@ def show_audio_settings():
         screen.fill((0, 0, 0))
 
         # Volume
-        draw_text("Master Volume", label_font, TEXT_COL, bar_x, volume_bar_y - 40)
+        draw_text("Master Volume", label_font, TEXT_COL, bar_x, volume_bar_y - 50)
         pygame.draw.rect(screen, (255, 255, 255), (bar_x, volume_bar_y, bar_width, bar_height))
         pygame.draw.rect(screen, (0, 255, 0), (bar_x, volume_bar_y, (volume / max_val) * bar_width, bar_height))
         volume_knob_x = bar_x + (volume / max_val) * bar_width
         pygame.draw.circle(screen, (255, 255, 0), (int(volume_knob_x), volume_bar_y + bar_height // 2), knob_radius)
 
         # SFX
-        draw_text("SFX", label_font, TEXT_COL, bar_x, sfx_bar_y - 40)
+        draw_text("SFX", label_font, TEXT_COL, bar_x, sfx_bar_y - 50)
         pygame.draw.rect(screen, (255, 255, 255), (bar_x, sfx_bar_y, bar_width, bar_height))
         pygame.draw.rect(screen, (0, 255, 0), (bar_x, sfx_bar_y, (sfx / max_val) * bar_width, bar_height))
         sfx_knob_x = bar_x + (sfx / max_val) * bar_width
         pygame.draw.circle(screen, (255, 255, 0), (int(sfx_knob_x), sfx_bar_y + bar_height // 2), knob_radius)
 
         # Music
-        draw_text("Music", label_font, TEXT_COL, bar_x, music_bar_y - 40)
+        draw_text("Music", label_font, TEXT_COL, bar_x, music_bar_y - 50)
         pygame.draw.rect(screen, (255, 255, 255), (bar_x, music_bar_y, bar_width, bar_height))
         pygame.draw.rect(screen, (0, 255, 0), (bar_x, music_bar_y, (music / max_val) * bar_width, bar_height))
         music_knob_x = bar_x + (music / max_val) * bar_width
