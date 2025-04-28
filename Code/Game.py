@@ -2,7 +2,8 @@ import pygame
 import random
 import math
 from menu import show_menu
-from enemy import Enemy  
+from enemy import Enemy
+import open
 
 class Player:
     def __init__(self):
@@ -12,6 +13,8 @@ class Player:
         self.y = 693
         self.speed = 1.5
         self.move = {'left': False, 'right': False, 'up': False, 'down': False}
+        self.max_health = 5
+        self.health = self.max_health
 
     def handle_movement(self):
         if self.move['left']:
@@ -28,6 +31,16 @@ class Player:
 
     def draw(self, screen):
         screen.blit(self.image, (self.x, self.y))
+        self.draw_health_bar(screen)
+
+    def draw_health_bar(self, screen):
+        bar_width = 100
+        bar_height = 10
+        fill = (self.health / self.max_health) * bar_width
+        outline_rect = pygame.Rect(self.x, self.y - 20, bar_width, bar_height)
+        fill_rect = pygame.Rect(self.x, self.y - 20, fill, bar_height)
+        pygame.draw.rect(screen, (255, 0, 0), fill_rect)
+        pygame.draw.rect(screen, (255, 255, 255), outline_rect, 2)
 
 
 class Bullet:
@@ -59,7 +72,7 @@ class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((1200, 850))
-        pygame.display.set_caption("Kẻ Cướp Không Gian")
+        pygame.display.set_caption("Space Shooter")
         self.clock = pygame.time.Clock()
 
         self.background = pygame.image.load('D:/Python/Game/images/background.png')
@@ -86,14 +99,39 @@ class Game:
     def get_player_pos(self):
         return self.player.x, self.player.y
 
-    def draw_text(self, text, x, y):
-        img = self.font.render(text, True, (255, 255, 255))
+    def draw_text(self, text, x, y, color=(255, 255, 255)):
+        img = self.font.render(text, True, color)
         self.screen.blit(img, (x, y))
 
     def spawn_enemy(self):
         new_enemy = Enemy(self.level, 1200, 850, self.get_player_pos)
         self.enemies.append(new_enemy)
         self.spawned_this_level += 1
+
+    def show_game_over(self):
+        game_over_font = pygame.font.SysFont(None, 100)
+        prompt_font = pygame.font.SysFont(None, 80)
+        game_over_text = game_over_font.render("GAME OVER", True, (255, 0, 0))
+        prompt_text = prompt_font.render("Press Any Key To Exit", True, (255, 255, 255))
+
+        self.screen.blit(game_over_text, (400, 180))
+        pygame.display.update()
+
+        pygame.time.delay(2000)
+
+        self.screen.blit(prompt_text, (340, 480))
+        pygame.display.update()
+
+        pygame.event.clear()  
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.KEYDOWN:
+                    waiting = False
+        open.show_main_menu()
 
     def run(self):
         while self.running:
@@ -138,11 +176,22 @@ class Game:
             for enemy in self.enemies[:]:
                 enemy.update()
                 enemy.draw(self.screen)
+
                 if self.bullet.state == "fire" and enemy.hit_by(self.bullet.x, self.bullet.y):
                     self.bullet.state = "ready"
                     if enemy.is_dead():
                         self.enemies.remove(enemy)
                         self.score += 1
+
+                for bullet in enemy.bullets[:]:
+                    bullet_rect = pygame.Rect(bullet['x'] - 5, bullet['y'] - 5, 10, 10)
+                    player_rect = pygame.Rect(self.player.x, self.player.y, self.player.image.get_width(), self.player.image.get_height())
+                    if player_rect.colliderect(bullet_rect):
+                        enemy.bullets.remove(bullet)
+                        self.player.health -= 1
+                        if self.player.health <= 0:
+                            self.show_game_over()
+                            self.running = False
 
             self.player.draw(self.screen)
             self.bullet.draw(self.screen)
