@@ -3,7 +3,7 @@ import random
 import math
 from menu import show_menu
 from enemy import Enemy
-import open
+import open as open_menu
 
 class Player:
     def __init__(self):
@@ -108,21 +108,52 @@ class Game:
         self.enemies.append(new_enemy)
         self.spawned_this_level += 1
 
+    def update_high_score(self):
+        try:
+            with open("highscore.txt", "r") as f:
+                high_score = int(f.read())
+        except:
+            high_score = 0
+
+        if self.score > high_score:
+            with open("highscore.txt", "w") as f:
+                f.write(str(self.score))
+
     def show_game_over(self):
+        self.update_high_score()
+
+        # Clear all entities for clean Game Over screen
+        self.enemies.clear()
+        self.bullet.state = "ready"
+        self.player.health = 0
+
+        self.screen.blit(self.background, (0, 0))
+
         game_over_font = pygame.font.SysFont(None, 100)
-        prompt_font = pygame.font.SysFont(None, 80)
+        prompt_font = pygame.font.SysFont(None, 60)
         game_over_text = game_over_font.render("GAME OVER", True, (255, 0, 0))
+
+        try:
+            with open("highscore.txt", "r") as f:
+                high_score = int(f.read())
+        except:
+            high_score = 0
+
+        score_text = prompt_font.render(f"Your Score: {self.score}", True, (255, 255, 255))
+        high_text = prompt_font.render(f"High Score: {high_score}", True, (255, 255, 0))
         prompt_text = prompt_font.render("Press Any Key To Exit", True, (255, 255, 255))
 
-        self.screen.blit(game_over_text, (400, 180))
+        self.screen.blit(game_over_text, (405, 180))
+        self.screen.blit(score_text, (420, 330))
+        self.screen.blit(high_text, (420, 410))
         pygame.display.update()
 
         pygame.time.delay(2000)
 
-        self.screen.blit(prompt_text, (340, 480))
+        self.screen.blit(prompt_text, (420, 570))
         pygame.display.update()
 
-        pygame.event.clear()  
+        pygame.event.clear()
         waiting = True
         while waiting:
             for event in pygame.event.get():
@@ -131,7 +162,7 @@ class Game:
                     exit()
                 if event.type == pygame.KEYDOWN:
                     waiting = False
-        open.show_main_menu()
+        open_menu.show_main_menu()
 
     def run(self):
         while self.running:
