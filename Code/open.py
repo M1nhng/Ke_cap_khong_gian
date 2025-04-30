@@ -3,6 +3,7 @@ import button
 from menu import show_options_menu
 from Game import run_game
 
+
 def show_main_menu():
     pygame.init()
 
