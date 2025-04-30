@@ -4,6 +4,10 @@ import math
 from menu import show_menu
 from enemy import Enemy
 import open as open_menu
+import os
+
+
+from audio_settings import set_sfx_volume
 
 class Player:
     def __init__(self):
@@ -42,7 +46,6 @@ class Player:
         pygame.draw.rect(screen, (255, 0, 0), fill_rect)
         pygame.draw.rect(screen, (255, 255, 255), outline_rect, 2)
 
-
 class Bullet:
     def __init__(self):
         self.image = pygame.image.load('D:/Python/Game/images/bullet.png')
@@ -66,7 +69,6 @@ class Bullet:
     def draw(self, screen):
         if self.state == "fire":
             screen.blit(self.image, (self.x, self.y))
-
 
 class Game:
     def __init__(self):
@@ -96,6 +98,10 @@ class Game:
         self.spawn_delay = 240
         self.font = pygame.font.SysFont(None, 36)
 
+
+        self.shoot_sound = pygame.mixer.Sound("D:/Python/Game/sounds/shoot3.wav")
+        set_sfx_volume(self.shoot_sound)
+
     def get_player_pos(self):
         return self.player.x, self.player.y
 
@@ -122,7 +128,6 @@ class Game:
     def show_game_over(self):
         self.update_high_score()
 
-        # Clear all entities for clean Game Over screen
         self.enemies.clear()
         self.bullet.state = "ready"
         self.player.health = 0
@@ -186,6 +191,8 @@ class Game:
                         self.player.move['down'] = True
                     if event.key == pygame.K_SPACE and self.bullet.state == "ready":
                         self.bullet.fire(self.player.x, self.player.y, self.player.image.get_width())
+                        set_sfx_volume(self.shoot_sound)  
+                        self.shoot_sound.play()
                 elif event.type == pygame.KEYUP:
                     if event.key in [pygame.K_LEFT, pygame.K_a]:
                         self.player.move['left'] = False
