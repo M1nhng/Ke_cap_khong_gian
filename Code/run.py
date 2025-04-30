@@ -1,4 +1,3 @@
-from open import show_main_menu
-
+import open 
 if __name__ == "__main__":
-    show_main_menu()
+    open.show_main_menu()
