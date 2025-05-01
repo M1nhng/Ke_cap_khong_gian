@@ -131,7 +131,6 @@ def run_game():
 
     while running:
         screen.blit(backgroundImg, (0, 0))
-        pygame.draw.line(screen, (255, 255, 255), (0, boundary_y), (1200, boundary_y), 2)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
