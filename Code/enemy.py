@@ -272,11 +272,14 @@ class BossEnemy:
         self.laser_width = screen_width // 5  # 240px
         self.laser_left_x = random.randint(100, screen_width - 2 * self.laser_width - 100)
         self.laser_right_x = self.laser_left_x + self.laser_width + 100
+        self.laser_left_center = self.laser_left_x + self.laser_width // 2
+        self.laser_right_center = self.laser_right_x + self.laser_width // 2
         self.laser_timer = 0
         self.laser_warning_time = 3 * 240  # 3 giây cảnh báo
         self.laser_active = False
         self.laser_narrow_speed = 0.5  # Tốc độ thu hẹp laser
-        self.boundary_y = 650
+        self.boundary_y = 850  # Đặt boundary_y bằng chiều cao màn hình để laser tràn xuống dưới
+        self.laser_duration = 7 * 240  # Tổng thời gian laser hoạt động (bao gồm cảnh báo)
 
     def update(self):
         # Di chuyển xuống cho đến khi đạt y = 100
@@ -289,8 +292,11 @@ class BossEnemy:
             self.mode_timer = 0
             if self.mode == 2:
                 # Reset laser cho chế độ 2
+                self.laser_width = self.screen_width // 5
                 self.laser_left_x = random.randint(100, self.screen_width - 2 * self.laser_width - 100)
                 self.laser_right_x = self.laser_left_x + self.laser_width + 100
+                self.laser_left_center = self.laser_left_x + self.laser_width // 2
+                self.laser_right_center = self.laser_right_x + self.laser_width // 2
                 self.laser_timer = 0
                 self.laser_active = False
 
@@ -311,14 +317,18 @@ class BossEnemy:
                 })
         elif self.mode == 2:
             self.laser_timer += 1
-            if self.laser_timer >= self.laser_warning_time:
+            if self.laser_timer < self.laser_warning_time:
+                # Giai đoạn cảnh báo
+                pass
+            elif self.laser_timer < self.laser_duration:
                 self.laser_active = True
-                # Thu hẹp laser
-                self.laser_left_x += self.laser_narrow_speed
-                self.laser_right_x -= self.laser_narrow_speed
-                # Giữ laser trong giới hạn
-                if self.laser_right_x - self.laser_left_x < 50:
-                    self.laser_right_x = self.laser_left_x + 50
+                # Thu hẹp laser về tâm của mỗi beam
+                self.laser_width -= self.laser_narrow_speed * 2  # Thu hẹp cả hai bên
+                if self.laser_width < 50:
+                    self.laser_width = 50  # Giới hạn kích thước tối thiểu
+                # Cập nhật vị trí laser để giữ tâm cố định
+                self.laser_left_x = self.laser_left_center - self.laser_width // 2
+                self.laser_right_x = self.laser_right_center - self.laser_width // 2
                 # Bắn đạn từ laser
                 if self.shoot_timer >= 10:  # Bắn nhanh
                     self.shoot_timer = 0
@@ -329,6 +339,15 @@ class BossEnemy:
                             'dx': 0,
                             'dy': self.bullet_speed
                         })
+            else:
+                # Laser biến mất, reset
+                self.laser_active = False
+                self.laser_timer = 0
+                self.laser_width = self.screen_width // 5
+                self.laser_left_x = random.randint(100, self.screen_width - 2 * self.laser_width - 100)
+                self.laser_right_x = self.laser_left_x + self.laser_width + 100
+                self.laser_left_center = self.laser_left_x + self.laser_width // 2
+                self.laser_right_center = self.laser_right_x + self.laser_width // 2
 
         # Cập nhật đạn
         for b in self.bullets[:]:
@@ -343,7 +362,7 @@ class BossEnemy:
         for b in self.bullets:
             pygame.draw.circle(screen, (255, 0, 0), (int(b['x']), int(b['y'])), 5)
         # Vẽ laser ở chế độ 2
-        if self.mode == 2:
+        if self.mode == 2 and self.laser_timer < self.laser_duration:
             color = (255, 0, 0, 128) if self.laser_timer < self.laser_warning_time else (255, 0, 0)
             pygame.draw.rect(screen, color, (self.laser_left_x, 0, self.laser_width, self.boundary_y), 2 if self.laser_timer < self.laser_warning_time else 0)
             pygame.draw.rect(screen, color, (self.laser_right_x, 0, self.laser_width, self.boundary_y), 2 if self.laser_timer < self.laser_warning_time else 0)
