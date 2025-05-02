@@ -1,7 +1,6 @@
 import pygame
 import button
-from audio_settings import VOLUME_SETTINGS
-
+from audio_settings import VOLUME_SETTINGS, set_music_volume  # Thêm set_music_volume vào!
 
 def show_menu():
     pygame.init()
@@ -26,7 +25,10 @@ def show_menu():
         if resume_button.draw(screen):
             return "resume"
         if options_button.draw(screen):
-            show_options_menu()
+            result = show_options_menu()
+            if result == "quit":
+                return "quit"
+            set_music_volume()  # Đồng bộ lại volume nhạc khi quay về menu
         if quit_button.draw(screen):
             return "quit"
 
@@ -60,7 +62,10 @@ def show_options_menu():
         screen.fill((0, 0, 0))
 
         if audio_button.draw(screen):
-            show_audio_settings()
+            result = show_audio_settings()
+            if result == "quit":
+                return "quit"
+            set_music_volume()  # Đồng bộ lại volume nhạc khi quay về option menu
         if video_button.draw(screen):
             print("Video settings clicked")
         if keys_button.draw(screen):
@@ -100,7 +105,6 @@ def show_audio_settings():
     sfx_bar_y = 250
     music_bar_y = 350
 
-
     volume = VOLUME_SETTINGS["master"]
     sfx = VOLUME_SETTINGS["sfx"]
     music = VOLUME_SETTINGS["music"]
@@ -115,21 +119,18 @@ def show_audio_settings():
     while running:
         screen.fill((0, 0, 0))
 
-        # Master Volume
         draw_text("Master Volume", label_font, TEXT_COL, bar_x, volume_bar_y - 50)
         pygame.draw.rect(screen, (255, 255, 255), (bar_x, volume_bar_y, bar_width, bar_height))
         pygame.draw.rect(screen, (0, 255, 0), (bar_x, volume_bar_y, volume * bar_width, bar_height))
         volume_knob_x = bar_x + volume * bar_width
         pygame.draw.circle(screen, (255, 255, 0), (int(volume_knob_x), volume_bar_y + bar_height // 2), knob_radius)
 
-        # SFX
         draw_text("SFX", label_font, TEXT_COL, bar_x, sfx_bar_y - 50)
         pygame.draw.rect(screen, (255, 255, 255), (bar_x, sfx_bar_y, bar_width, bar_height))
         pygame.draw.rect(screen, (0, 255, 0), (bar_x, sfx_bar_y, sfx * bar_width, bar_height))
         sfx_knob_x = bar_x + sfx * bar_width
         pygame.draw.circle(screen, (255, 255, 0), (int(sfx_knob_x), sfx_bar_y + bar_height // 2), knob_radius)
 
-        # Music
         draw_text("Music", label_font, TEXT_COL, bar_x, music_bar_y - 50)
         pygame.draw.rect(screen, (255, 255, 255), (bar_x, music_bar_y, bar_width, bar_height))
         pygame.draw.rect(screen, (0, 255, 0), (bar_x, music_bar_y, music * bar_width, bar_height))
@@ -137,12 +138,13 @@ def show_audio_settings():
         pygame.draw.circle(screen, (255, 255, 0), (int(music_knob_x), music_bar_y + bar_height // 2), knob_radius)
 
         if back_button.draw(screen):
+            running = False
             return "back"
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                running = False
                 return "quit"
-
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mx, my = pygame.mouse.get_pos()
                 if pygame.Rect(volume_knob_x - knob_radius, volume_bar_y - knob_radius, knob_radius * 2, knob_radius * 2).collidepoint(mx, my):
@@ -151,10 +153,8 @@ def show_audio_settings():
                     dragging_sfx = True
                 elif pygame.Rect(music_knob_x - knob_radius, music_bar_y - knob_radius, knob_radius * 2, knob_radius * 2).collidepoint(mx, my):
                     dragging_music = True
-
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 dragging_volume = dragging_sfx = dragging_music = False
-
             elif event.type == pygame.MOUSEMOTION:
                 mx, _ = event.pos
                 changed = False
@@ -171,6 +171,7 @@ def show_audio_settings():
                     VOLUME_SETTINGS["master"] = volume
                     VOLUME_SETTINGS["sfx"] = sfx
                     VOLUME_SETTINGS["music"] = music
+                    set_music_volume()  # Cập nhật realtime nhạc nền!
 
         pygame.display.update()
 
