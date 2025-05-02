@@ -1,4 +1,11 @@
 import pygame
+from audio_settings import set_sfx_volume
+
+pygame.mixer.init()
+
+# Load âm click một lần thôi
+click_sound = pygame.mixer.Sound("D:/Python/Game/sounds/button-click-289742.mp3")
+set_sfx_volume(click_sound)
 
 class Button:
     def __init__(self, x, y, image, scale=1):
@@ -17,6 +24,9 @@ class Button:
             if pygame.mouse.get_pressed()[0] == 1 and not self.clicked:
                 self.clicked = True
                 action = True
+                # Khi click button: Phát âm thanh click
+                set_sfx_volume(click_sound)  # Cập nhật volume SFX hiện tại
+                click_sound.play()
 
         if pygame.mouse.get_pressed()[0] == 0:
             self.clicked = False
