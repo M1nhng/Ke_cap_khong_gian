@@ -5,8 +5,6 @@ from menu import show_menu
 from enemy import Enemy
 import open as open_menu
 import os
-
-
 from audio_settings import set_sfx_volume
 
 class Player:
@@ -98,9 +96,11 @@ class Game:
         self.spawn_delay = 240
         self.font = pygame.font.SysFont(None, 36)
 
-
         self.shoot_sound = pygame.mixer.Sound("D:/Python/Game/sounds/shoot3.wav")
         set_sfx_volume(self.shoot_sound)
+
+        self.die_sound = pygame.mixer.Sound("D:/Python/Game/sounds/die_sound.wav")
+        set_sfx_volume(self.die_sound)
 
     def get_player_pos(self):
         return self.player.x, self.player.y
@@ -228,6 +228,9 @@ class Game:
                         enemy.bullets.remove(bullet)
                         self.player.health -= 1
                         if self.player.health <= 0:
+                            set_sfx_volume(self.die_sound)  # Đảm bảo volume đúng
+                            self.die_sound.play()  # Phát âm thanh chết
+                            pygame.time.delay(0000)  # Đợi 1 giây cho âm thanh vang lên
                             self.show_game_over()
                             self.running = False
 
