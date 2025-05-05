@@ -99,24 +99,30 @@ class Player:
             self.speed = self.base_speed
 
 class Bullet:
-    def __init__(self):
+    def __init__(self, angle=0):
         self.image = pygame.image.load('D:/Python/Game/images/bullet.png')
         self.image = pygame.transform.scale(self.image, (34, 34))
         self.x = 0
         self.y = 800
         self.speed = 7
+        self.angle = angle  # Angle in degrees for triple shot
         self.state = "ready"
-        self.damage = 10  # Damage dealt by player's bullet
+        self.damage = 10  # Default damage
 
-    def fire(self, x, y, player_width):
+    def fire(self, x, y, player_width, triple_shot_active=False):
         self.state = "fire"
         self.x = x + player_width // 2 - self.image.get_width() // 2
         self.y = y - self.image.get_height()
+        if triple_shot_active:
+            self.damage = 15  # Increase damage during triple shot
 
     def move(self):
         if self.state == "fire":
-            self.y -= self.speed
-            if self.y <= 0:
+            # Calculate velocity based on angle
+            rad = math.radians(self.angle)
+            self.x += self.speed * math.sin(rad)  # Horizontal movement
+            self.y -= self.speed * math.cos(rad)  # Vertical movement
+            if self.y <= 0 or self.x < 0 or self.x > 1200:
                 self.state = "ready"
 
     def draw(self, screen):
@@ -137,7 +143,7 @@ class Game:
         pygame.display.set_icon(icon)
 
         self.player = Player()
-        self.bullet = Bullet()
+        self.bullets = []  # List to store multiple bullets
         self.enemies = []
         self.items = []  # List to track dropped items
         self.level_manager = LevelManager()
@@ -146,6 +152,7 @@ class Game:
         self.spawn_counter = 0
         self.spawned_this_level = 0
         self.score = 0
+        self.shoot_cooldown = 0  # Cooldown to prevent rapid firing
 
         # Spawn delay for levels (Level 1: 1.5 seconds = 360 frames at 240 FPS)
         self.spawn_delays = {
@@ -159,7 +166,7 @@ class Game:
 
         self.font = pygame.font.SysFont(None, 36)
 
-        self.shoot_sound = pygame.mixer.Sound("D:/Python/Game/sounds/shoot3.wav")
+        self.shoot_sound = pygame.mixer.Sound("D:/Python/Game/sounds/shoot.wav")
         set_sfx_volume(self.shoot_sound)
 
         self.die_sound = pygame.mixer.Sound("D:/Python/Game/sounds/die_sound.wav")
@@ -181,14 +188,12 @@ class Game:
             self.enemies.append(new_enemy)
         else:
             if current_level == 1:
-                # For Level 1, spawn basic Enemy from top, moving downward
                 if self.level_manager.get_time_left() > 0:  # Spawn until time runs out
                     new_enemy = Enemy(current_level, 1200, 850, self.get_player_pos)
                     new_enemy.health = 10  # Add health to basic Enemy
                     self.enemies.append(new_enemy)
                     self.spawned_this_level += 1
             else:
-                # Other levels remain unchanged
                 if current_level == 2:
                     enemy_types = [Enemy, DiagonalEnemy]
                     weights = [0.6, 0.4]
@@ -200,7 +205,6 @@ class Game:
                     weights = [0.3, 0.3, 0.2, 0.2]
                 enemy_type = random.choices(enemy_types, weights=weights, k=1)[0]
                 new_enemy = enemy_type(current_level, 1200, 850, self.get_player_pos)
-                # Assign health based on enemy type
                 if isinstance(new_enemy, Enemy):
                     new_enemy.health = 10 + (current_level - 1) * 5
                 elif isinstance(new_enemy, DiagonalEnemy):
@@ -226,10 +230,10 @@ class Game:
     def show_game_over(self):
         self.update_high_score()
         self.enemies.clear()
-        self.items.clear()  # Clear items on game over
-        self.bullet.state = "ready"
-        self.player.health_manager.current_health = 0  # Reset health
-        self.player.hp = 0  # Sync hp
+        self.items.clear()
+        self.bullets.clear()  # Clear bullets on game over
+        self.player.health_manager.current_health = 0
+        self.player.hp = 0
         self.screen.blit(self.background, (0, 0))
 
         game_over_font = pygame.font.SysFont(None, 100)
@@ -288,10 +292,25 @@ class Game:
                         self.player.move['up'] = True
                     if event.key in [pygame.K_DOWN, pygame.K_s]:
                         self.player.move['down'] = True
-                    if event.key == pygame.K_SPACE and self.bullet.state == "ready":
-                        self.bullet.fire(self.player.x, self.player.y, self.player.image.get_width())
+                    if event.key == pygame.K_SPACE and self.shoot_cooldown <= 0:
+                        triple_shot_active = self.player.triple_shot_timer > 0
+                        if triple_shot_active:
+                            # Fire three bullets with angles
+                            bullet1 = Bullet(angle=0)  # Straight
+                            bullet2 = Bullet(angle=-20)  # Left
+                            bullet3 = Bullet(angle=20)  # Right
+                            bullet1.fire(self.player.x, self.player.y, self.player.image.get_width(), triple_shot_active)
+                            bullet2.fire(self.player.x, self.player.y, self.player.image.get_width(), triple_shot_active)
+                            bullet3.fire(self.player.x, self.player.y, self.player.image.get_width(), triple_shot_active)
+                            self.bullets.extend([bullet1, bullet2, bullet3])
+                        else:
+                            # Fire single bullet
+                            bullet = Bullet()
+                            bullet.fire(self.player.x, self.player.y, self.player.image.get_width())
+                            self.bullets.append(bullet)
                         set_sfx_volume(self.shoot_sound)
                         self.shoot_sound.play()
+                        self.shoot_cooldown = 20  # Cooldown of ~0.083 seconds at 240 FPS
                 elif event.type == pygame.KEYUP:
                     if event.key in [pygame.K_LEFT, pygame.K_a]:
                         self.player.move['left'] = False
@@ -303,8 +322,16 @@ class Game:
                         self.player.move['down'] = False
 
             self.player.handle_movement()
-            self.player.update_buffs()  # Update item effects
-            self.bullet.move()
+            self.player.update_buffs()
+            if self.shoot_cooldown > 0:
+                self.shoot_cooldown -= 1
+
+            # Update and draw bullets
+            for bullet in self.bullets[:]:
+                bullet.move()
+                bullet.draw(self.screen)
+                if bullet.state == "ready":
+                    self.bullets.remove(bullet)
 
             self.spawn_delay = self.spawn_delays.get(self.level_manager.current_level, 360)
             if self.spawn_counter >= self.spawn_delay:
@@ -320,15 +347,11 @@ class Game:
                 player_rect = self.player.get_rect()
                 enemy_rect = enemy.rect
                 if player_rect.colliderect(enemy_rect):
-                    # Check if player has shield
                     if self.player.shield > 0:
-                        # Reduce shield by 5 (same as bullet damage)
                         self.player.shield = max(0, self.player.shield - 5)
                     else:
-                        # No shield, reduce health by 5 (collision damage)
                         is_dead = self.player.health_manager.take_damage(5)
-                        self.player.hp = self.player.health_manager.get_health()  # Sync hp
-                        # Trigger a one-time flicker (60 frames ~ 0.25 seconds at 240 FPS)
+                        self.player.hp = self.player.health_manager.get_health()
                         if self.player.invulnerable_timer <= 0:
                             self.player.invulnerable_timer = 60
                         if is_dead:
@@ -337,41 +360,35 @@ class Game:
                             pygame.time.delay(0)
                             self.show_game_over()
                             self.running = False
-                    # Remove the enemy that collided with the player
                     self.enemies.remove(enemy)
 
-                if self.bullet.state == "fire" and enemy.hit_by(self.bullet.x, self.bullet.y):
-                    self.bullet.state = "ready"
-                    # Reduce enemy health instead of killing immediately
-                    enemy.health -= self.bullet.damage
-                    if enemy.health <= 0:  # Check if enemy is dead
-                        # In Level 1, increase drop chance to 60%
-                        if self.level_manager.current_level == 1:
-                            if random.random() < 0.6:  # 60% chance to drop an item
+                for bullet in self.bullets[:]:
+                    if bullet.state == "fire" and enemy.hit_by(bullet.x, bullet.y):
+                        enemy.health -= bullet.damage
+                        self.bullets.remove(bullet)  # Bullet disappears after hitting
+                        if enemy.health <= 0:
+                            if self.level_manager.current_level == 1:
+                                if random.random() < 0.6:
+                                    item = enemy.drop_item()
+                                    if item:
+                                        self.items.append(item)
+                            else:
                                 item = enemy.drop_item()
                                 if item:
                                     self.items.append(item)
-                        else:
-                            # Other levels retain original drop logic (handled by enemy.drop_item())
-                            item = enemy.drop_item()
-                            if item:
-                                self.items.append(item)
-                        self.enemies.remove(enemy)
-                        self.score += 1
+                            self.enemies.remove(enemy)
+                            self.score += 1
 
                 for bullet in enemy.bullets[:]:
                     bullet_rect = pygame.Rect(bullet['x'] - 5, bullet['y'] - 5, 10, 10)
                     player_rect = self.player.get_rect()
                     if player_rect.colliderect(bullet_rect):
                         enemy.bullets.remove(bullet)
-                        # Check if player has shield
                         if self.player.shield > 0:
-                            # Reduce shield by 5 per hit
                             self.player.shield = max(0, self.player.shield - 5)
                         else:
-                            # No shield, reduce health by 10 (bullet damage)
                             is_dead = self.player.health_manager.take_damage(10)
-                            self.player.hp = self.player.health_manager.get_health()  # Sync hp
+                            self.player.hp = self.player.health_manager.get_health()
                             if is_dead:
                                 set_sfx_volume(self.die_sound)
                                 self.die_sound.play()
@@ -379,17 +396,13 @@ class Game:
                                 self.show_game_over()
                                 self.running = False
 
-            # Update and draw items
             for item in self.items[:]:
                 item.update()
                 self.screen.blit(item.image, item.rect)
-            # Apply item effects and sync health
             check_collision_and_apply(self.player, self.items, [], [])
-            # Sync HealthManager with player.hp after healing
             self.player.health_manager.current_health = self.player.hp
 
             self.player.draw(self.screen)
-            self.bullet.draw(self.screen)
 
             self.draw_text(f"Level {self.level_manager.current_level}", 10, 10)
             self.draw_text(f"Score: {self.score}", 10, 40)
@@ -400,7 +413,8 @@ class Game:
                 if self.level_manager.current_level < max(self.level_manager.level_durations.keys()):
                     self.level_manager.next_level()
                     self.enemies.clear()
-                    self.items.clear()  # Clear items when moving to next level
+                    self.items.clear()
+                    self.bullets.clear()
                     self.spawned_this_level = 0
                 else:
                     self.running = False
