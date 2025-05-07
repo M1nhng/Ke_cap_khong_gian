@@ -41,7 +41,7 @@ class Player:
         self.hp = 100
         self.max_hp = 100
         self.shield = 0
-        self.max_shield = 20
+        self.max_shield = 10
         self.base_speed = 3
         self.triple_shot_timer = 0
         self.speed_boost_timer = 0
@@ -104,14 +104,14 @@ class Bullet:
         self.speed = 7
         self.angle = angle
         self.state = "ready"
-        self.damage = 10
+        self.damage = 50
 
     def fire(self, x, y, player_width, triple_shot_active=False):
         self.state = "fire"
         self.x = x + player_width // 2 - self.image.get_width() // 2
         self.y = y - self.image.get_height()
         if triple_shot_active:
-            self.damage = 15
+            self.damage = 75
 
     def move(self):
         if self.state == "fire":
@@ -175,12 +175,13 @@ class Level2(Level):
     def _spawn(self, enemies, level_manager):
         if not self.bomb_enemy_spawned:
             bomb_enemy = BombEnemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
+            bomb_enemy.health = 60
             if self.check_overlap(bomb_enemy, enemies):
                 enemies.append(bomb_enemy)
                 self.bomb_enemy_spawned = True
                 self.spawned_this_level += 1
         new_enemy = Enemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-        new_enemy.health = 10
+        new_enemy.health = 15
         if self.check_overlap(new_enemy, enemies):
             enemies.append(new_enemy)
             self.spawned_this_level += 1
@@ -190,13 +191,13 @@ class Level3(Level):
         shotgun_count = sum(1 for enemy in enemies if isinstance(enemy, ShotgunEnemy))
         if not self.shotgun_enemy_spawned and shotgun_count == 0:
             shotgun_enemy = ShotgunEnemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-            shotgun_enemy.health = 25
+            shotgun_enemy.health = 200
             if self.check_overlap(shotgun_enemy, enemies):
                 enemies.append(shotgun_enemy)
                 self.shotgun_enemy_spawned = True
                 self.spawned_this_level += 1
         new_enemy = Enemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-        new_enemy.health = 15
+        new_enemy.health = 100
         if self.check_overlap(new_enemy, enemies):
             enemies.append(new_enemy)
             self.spawned_this_level += 1
@@ -212,14 +213,14 @@ class Level4(Level):
         shotgun_count = sum(1 for enemy in enemies if isinstance(enemy, ShotgunEnemy))
         if not self.bomb_enemy_spawned:
             bomb_enemy = BombEnemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-            bomb_enemy.health = 20
+            bomb_enemy.health = 250
             if self.check_overlap(bomb_enemy, enemies):
                 enemies.append(bomb_enemy)
                 self.bomb_enemy_spawned = True
                 self.spawned_this_level += 1
         if not self.shotgun_enemy_spawned and shotgun_count == 0:
             shotgun_enemy = ShotgunEnemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-            shotgun_enemy.health = 25
+            shotgun_enemy.health = 300
             if self.check_overlap(shotgun_enemy, enemies):
                 enemies.append(shotgun_enemy)
                 self.shotgun_enemy_spawned = True
@@ -228,7 +229,7 @@ class Level4(Level):
         if self.spawn_counter >= self.spawn_delay and level_manager.get_time_left() > 0:
             self.spawn_counter = 0
             new_enemy = Enemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-            new_enemy.health = 15
+            new_enemy.health = 100
             if self.check_overlap(new_enemy, enemies):
                 enemies.append(new_enemy)
                 self.spawned_this_level += 1
@@ -238,32 +239,32 @@ class Level4(Level):
             if self.wave_counter == 0:
                 for _ in range(4):
                     new_enemy = Enemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-                    new_enemy.health = 15
+                    new_enemy.health = 100
                     if self.check_overlap(new_enemy, enemies):
                         enemies.append(new_enemy)
                         self.spawned_this_level += 1
             elif self.wave_counter == 1:
                 for _ in range(3):
                     new_enemy = Enemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-                    new_enemy.health = 15
+                    new_enemy.health = 100
                     if self.check_overlap(new_enemy, enemies):
                         enemies.append(new_enemy)
                         self.spawned_this_level += 1
                 bomb_enemy = BombEnemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-                bomb_enemy.health = 20
+                bomb_enemy.health = 250
                 if self.check_overlap(bomb_enemy, enemies):
                     enemies.append(bomb_enemy)
                     self.spawned_this_level += 1
             elif self.wave_counter == 2:
                 for _ in range(2):
                     new_enemy = Enemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-                    new_enemy.health = 15
+                    new_enemy.health = 100
                     if self.check_overlap(new_enemy, enemies):
                         enemies.append(new_enemy)
                         self.spawned_this_level += 1
                 if shotgun_count < 2:
                     shotgun_enemy = ShotgunEnemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-                    shotgun_enemy.health = 25
+                    shotgun_enemy.health = 300
                     if self.check_overlap(shotgun_enemy, enemies):
                         enemies.append(shotgun_enemy)
                         self.spawned_this_level += 1
@@ -274,15 +275,28 @@ class Level5(Level):
         super().__init__(level_number, screen_width, screen_height, get_player_pos, spawn_delay)
         self.boss_spawned = False
         self.level_start_time = 0
+        self.enemy_spawn_delay = 360  # ~1.5s
+        self.enemy_spawn_timer = 0
 
     def spawn_enemies(self, enemies, level_manager):
         if not self.boss_spawned:
             new_enemy = BossEnemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-            new_enemy.health = 200
+            new_enemy.health = 3500
+            new_enemy.max_health = 3500
             enemies.append(new_enemy)
             self.boss_spawned = True
             self.spawned_this_level += 1
             self.level_start_time = pygame.time.get_ticks()
+
+        # Continuous enemy spawns
+        self.enemy_spawn_timer += 1
+        if self.enemy_spawn_timer >= self.enemy_spawn_delay:
+            new_enemy = Enemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
+            new_enemy.health = 50
+            if self.check_overlap(new_enemy, enemies):
+                enemies.append(new_enemy)
+                self.spawned_this_level += 1
+                self.enemy_spawn_timer = 0
 
 class Game:
     def __init__(self):
@@ -317,6 +331,8 @@ class Game:
         set_sfx_volume(self.die_sound)
         self.boss_explosion_sound = pygame.mixer.Sound("D:/Python/Game/sounds/die_sound.wav")
         set_sfx_volume(self.boss_explosion_sound)
+        self.win_sound = pygame.mixer.Sound("D:/Python/Game/sounds/win_sound.wav")
+        self.win_sound.set_volume(5.0)  # Set win_sound to maximum volume
 
     def get_player_pos(self):
         return self.player.x, self.player.y
@@ -392,7 +408,7 @@ class Game:
         score_text = prompt_font.render(f"Total Score: {total_score}", True, (255, 255, 255))
         enemies_text = prompt_font.render(f"Enemies Killed: {self.enemies_killed}", True, (255, 255, 255))
         time_text = prompt_font.render(f"Level 5 Time: {time_taken}s", True, (255, 255, 255))
-        bonus_text = prompt_font.render(f"Health Bonus: {health_bonus}", True, (255, 255, 255))
+        bonus_text = prompt_font.render(f"Health Bonus: {health_bonus}", True, (255, 255, 0))
         high_text = prompt_font.render(f"High Score: {high_score}", True, (255, 255, 0))
         prompt_text = prompt_font.render("Press Any Key to Continue", True, (255, 255, 255))
         self.screen.blit(victory_text, (405, 100))
@@ -418,6 +434,7 @@ class Game:
 
     def run(self):
         self.level_manager.start_level(1)
+        print(f"Starting game at Level {self.level_manager.current_level}")
         while self.running:
             self.screen.blit(self.background, (0, 0))
             for event in pygame.event.get():
@@ -452,7 +469,7 @@ class Game:
                             self.bullets.append(bullet)
                         set_sfx_volume(self.shoot_sound)
                         self.shoot_sound.play()
-                        self.shoot_cooldown = 20
+                        self.shoot_cooldown = 5
                 elif event.type == pygame.KEYUP:
                     if event.key in [pygame.K_LEFT, pygame.K_a]:
                         self.player.move['left'] = False
@@ -476,51 +493,58 @@ class Game:
             for enemy in self.enemies[:]:
                 enemy.update()
                 enemy.draw(self.screen)
+                remove_enemy = False
                 player_rect = self.player.get_rect()
                 enemy_rect = enemy.rect
-                if player_rect.colliderect(enemy_rect):
-                    if isinstance(enemy, Enemy):
-                        if self.player.shield > 0:
-                            self.player.shield = max(0, self.player.shield - 5)
-                        else:
-                            is_dead = self.player.health_manager.take_damage(5)
-                            self.player.hp = self.player.health_manager.get_health()
-                            if self.player.invulnerable_timer <= 0:
-                                self.player.invulnerable_timer = 60
-                            if is_dead:
-                                set_sfx_volume(self.die_sound)
-                                self.die_sound.play()
-                                pygame.time.delay(0)
-                                self.show_game_over()
-                                self.running = False
-                        self.enemies.remove(enemy)
-                    continue
-                for bullet in self.bullets[:]:
-                    if bullet.state == "fire" and enemy.hit_by(bullet.x, bullet.y):
-                        enemy.health -= bullet.damage
-                        self.bullets.remove(bullet)
-                        if enemy.is_dead():
-                            item = enemy.drop_item()
-                            if item:
-                                self.items.append(item)
-                            if isinstance(enemy, BombEnemy):
-                                new_bomb = BombEnemy(enemy.level, self.screen.get_width(), self.screen.get_height(), self.get_player_pos)
-                                new_bomb.rect.x = random.randint(50, self.screen.get_width() - 100)
-                                new_bomb.rect.y = 50
-                                if current_level.check_overlap(new_bomb, self.enemies):
-                                    self.enemies.append(new_bomb)
-                            elif isinstance(enemy, ShotgunEnemy):
-                                current_level.shotgun_enemy_spawned = False
-                            elif isinstance(enemy, BossEnemy):
-                                set_sfx_volume(self.boss_explosion_sound)
-                                self.boss_explosion_sound.play()
-                                self.show_victory_screen(current_level.level_start_time)
-                                self.running = False
-                            self.enemies.remove(enemy)
-                            self.score += 1
-                            self.enemies_killed += 1
-                            break
-                if hasattr(enemy, 'bullets') and enemy.bullets:
+                if player_rect.colliderect(enemy_rect) and not isinstance(enemy, BossEnemy):
+                    if self.player.shield > 0:
+                        self.player.shield = max(0, self.player.shield - 5)
+                    else:
+                        is_dead = self.player.health_manager.take_damage(5)
+                        self.player.hp = self.player.health_manager.get_health()
+                        if self.player.invulnerable_timer <= 0:
+                            self.player.invulnerable_timer = 60
+                        if is_dead:
+                            set_sfx_volume(self.die_sound)
+                            self.die_sound.play()
+                            pygame.time.delay(0)
+                            self.show_game_over()
+                            self.running = False
+                    remove_enemy = True
+                if not remove_enemy:
+                    for bullet in self.bullets[:]:
+                        if bullet.state == "fire" and enemy.hit_by(bullet.x, bullet.y):
+                            enemy.health -= bullet.damage
+                            self.bullets.remove(bullet)
+                            if enemy.is_dead():
+                                if not isinstance(enemy, BossEnemy):
+                                    item = enemy.drop_item()
+                                    if item:
+                                        self.items.append(item)
+                                if isinstance(enemy, BombEnemy):
+                                    new_bomb = BombEnemy(enemy.level, self.screen.get_width(), self.screen.get_height(), self.get_player_pos)
+                                    new_bomb.rect.x = random.randint(50, self.screen.get_width() - 100)
+                                    new_bomb.rect.y = 50
+                                    new_bomb.health = 250
+                                    if current_level.check_overlap(new_bomb, self.enemies):
+                                        self.enemies.append(new_bomb)
+                                elif isinstance(enemy, ShotgunEnemy):
+                                    current_level.shotgun_enemy_spawned = False
+                                elif isinstance(enemy, BossEnemy):
+                                    pygame.mixer.music.stop()  # Stop background music
+                                    pygame.mixer.stop()  # Stop all other sounds
+                                    self.win_sound.set_volume(1.0)  # Ensure max volume
+                                    self.win_sound.play()
+                                    player_x, player_y = self.get_player_pos()
+                                    item = Item(enemy.rect.centerx, enemy.rect.centery, item_type="triple_shot", player_x=player_x, player_y=player_y)
+                                    self.items.append(item)
+                                    self.show_victory_screen(current_level.level_start_time)
+                                    self.running = False
+                                remove_enemy = True
+                                self.score += 1
+                                self.enemies_killed += 1
+                                break
+                if hasattr(enemy, 'bullets') and enemy.bullets and not remove_enemy:
                     for bullet in enemy.bullets[:]:
                         bullet_rect = pygame.Rect(bullet['x'] - 5, bullet['y'] - 5, 10, 10)
                         player_rect = self.player.get_rect()
@@ -537,6 +561,9 @@ class Game:
                                     pygame.time.delay(0)
                                     self.show_game_over()
                                     self.running = False
+                if remove_enemy:
+                    if enemy in self.enemies:
+                        self.enemies.remove(enemy)
             for item in self.items[:]:
                 item.update()
                 self.screen.blit(item.image, item.rect)
@@ -547,9 +574,10 @@ class Game:
             self.draw_text(f"Score: {self.score}", 10, 40)
             time_left = int(self.level_manager.get_time_left())
             self.draw_text(f"Time Left: {time_left}s", 10, 70)
-            if self.level_manager.is_level_complete() and self.level_manager.current_level < 5:
-                if self.level_manager.current_level < max(self.level_manager.level_durations.keys()):
+            if self.level_manager.is_level_complete() and self.level_manager.current_level <= 5:
+                if self.level_manager.current_level < len(self.levels):
                     self.level_manager.next_level()
+                    print(f"Transitioning to Level {self.level_manager.current_level}")
                     self.enemies.clear()
                     self.items.clear()
                     self.bullets.clear()
@@ -557,8 +585,15 @@ class Game:
                     current_level.bomb_enemy_spawned = False
                     current_level.shotgun_enemy_spawned = False
                     if isinstance(current_level, Level4):
+                        self.level_manager.current_level = 4
+                        self.level_manager.start_level(4)
                         current_level.wave_counter = 0
                         current_level.wave_timer = 0
+                    elif isinstance(current_level, Level5):
+                        current_level.boss_spawned = False
+                        self.level_manager.start_level(5)
+                        self.level_manager.handle_special_levels()
+                        current_level.enemy_spawn_timer = 0
             pygame.display.update()
             self.clock.tick(240)
         pygame.quit()
