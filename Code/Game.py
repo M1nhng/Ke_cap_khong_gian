@@ -281,8 +281,8 @@ class Level5(Level):
     def spawn_enemies(self, enemies, level_manager):
         if not self.boss_spawned:
             new_enemy = BossEnemy(self.level_number, self.screen_width, self.screen_height, self.get_player_pos)
-            new_enemy.health = 3500
-            new_enemy.max_health = 3500
+            new_enemy.health = 5000
+            new_enemy.max_health = 5000
             enemies.append(new_enemy)
             self.boss_spawned = True
             self.spawned_this_level += 1
@@ -332,7 +332,7 @@ class Game:
         self.boss_explosion_sound = pygame.mixer.Sound("D:/Python/Game/sounds/die_sound.wav")
         set_sfx_volume(self.boss_explosion_sound)
         self.win_sound = pygame.mixer.Sound("D:/Python/Game/sounds/win_sound.wav")
-        self.win_sound.set_volume(5.0)  # Set win_sound to maximum volume
+        self.win_sound.set_volume(1.0)  # Set win_sound to maximum volume
 
     def get_player_pos(self):
         return self.player.x, self.player.y
@@ -433,7 +433,8 @@ class Game:
         open_menu.show_main_menu()
 
     def run(self):
-        self.level_manager.start_level(1)
+        self.level_manager.current_level = 1
+        self.level_manager.start_level(1)  # Start at Level 4
         print(f"Starting game at Level {self.level_manager.current_level}")
         while self.running:
             self.screen.blit(self.background, (0, 0))
@@ -584,16 +585,15 @@ class Game:
                     current_level.spawned_this_level = 0
                     current_level.bomb_enemy_spawned = False
                     current_level.shotgun_enemy_spawned = False
-                    if isinstance(current_level, Level4):
-                        self.level_manager.current_level = 4
-                        self.level_manager.start_level(4)
-                        current_level.wave_counter = 0
-                        current_level.wave_timer = 0
-                    elif isinstance(current_level, Level5):
-                        current_level.boss_spawned = False
-                        self.level_manager.start_level(5)
+                    if isinstance(self.levels[self.level_manager.current_level - 1], Level5):
+                        self.levels[self.level_manager.current_level - 1].boss_spawned = False
+                        self.level_manager.start_level(self.level_manager.current_level)
                         self.level_manager.handle_special_levels()
-                        current_level.enemy_spawn_timer = 0
+                        self.levels[self.level_manager.current_level - 1].enemy_spawn_timer = 0
+                    elif isinstance(self.levels[self.level_manager.current_level - 1], Level4):
+                        self.levels[self.level_manager.current_level - 1].wave_counter = 0
+                        self.levels[self.level_manager.current_level - 1].wave_timer = 0
+                        self.level_manager.start_level(self.level_manager.current_level)
             pygame.display.update()
             self.clock.tick(240)
         pygame.quit()
